@@ -1,0 +1,155 @@
+{% extends "dashboard/base.html" %}
+{% block content %}
+
+<div class="card" id="challonge-url-card"
+    style="width: auto">
+    <div class="card-header">
+        <h5 class="card-title">Challonge URL</h5>
+    </div>
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+            <p class="card-text">Enter the Challonge URL to
+                be used for the Overlay currently</p>
+            <input type="text" class="form-control"
+                id="challonge-url"
+                placeholder="Enter Challonge URL">
+            <div class="d-flex justify-content-center">
+
+                <button type="button"
+                    id="challonge-url-submit"
+                    class="btn btn-primary"
+                    style="width: 100%;">Submit</button>
+
+            </div>
+        </form>
+
+    </div>
+</div>
+
+<div class="row" id="stream-settings">
+    <div class="col" id="challonge-group-selection">
+        <div class="card" id="challonge-group-select">
+            <div class="card-header">
+                <h5 class="card-title">Select Group</h5>
+            </div>
+            <div class="card-body">
+                <p class="card-text">If there are Groups,
+                    you can select them here. This will
+                    filter out the match selection</p>
+                <select class="form-select"
+                    id="challonge-group-select">
+                    <option selected>Select Group</option>
+                    <option value="1">Group 1</option>
+                    <option value="2">Group 2</option>
+                    <option value="3">Group 3</option>
+                </select>
+                <div class="d-flex justify-content-center">
+
+                    <button type="button"
+                        id="challonge-url-submit"
+                        class="btn btn-primary"
+                        style="width: 100%;">Select</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col" id="challonge-round-selection">
+        <div class="card" id="challonge-round-card"
+            style="width: 18rem">
+            <div class="card-header">
+                <h5 class="card-title"> Current Round - XX</h5>
+            </div>
+            <div class="card-body">
+                <p class="card-text">Round is determiend
+                    automatically
+                    but can be overriden here if there is issues
+                </p>
+                <select class="form-select"
+                    id="challonge-round-select">
+                    <option selected>Select Round</option>
+                    {% for round in rounds %}
+                    <option value="{{ round }}">{{ round }}</option>
+                    {% endfor %}
+                </select>
+                <div class="d-flex justify-content-center">
+
+                    <button type="button"
+                        id="challonge-url-submit"
+                        class="btn btn-primary"
+                        style="width: 100%;">Override</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="card"
+            id="challonge-select-match-card"
+            style="width: 18rem">
+            <div class="card-header">
+                <h5 class="card-title">Select Featured
+                    Match</h5>
+            </div>
+            <div class="card-body">
+                <p class="card-text">Select the match to
+                    be
+                    featured
+                    on the Overlay</p>
+                <select class="form-select"
+                    id="challonge-select-match">
+                    <option selected>Select
+                        Match</option>
+                </select>
+                <div
+                    class="d-flex justify-content-center">
+
+                    <button type="button"
+                        id="challonge-url-submit"
+                        class="btn btn-primary"
+                        style="width: 100%;">Display on
+                        Stream</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const roundSelect = document.getElementById("challonge-round-select");
+    const matchSelect = document.getElementById("challonge-select-match");
+
+    roundSelect.addEventListener("change", function() {
+        const selectedRound = parseInt(this.value);
+        const tournamentId = "{{ tournament.tournament_id }}";  // Assuming tournament.id is available in the template context
+    
+        fetch(`/api/matches/${tournamentId}/${selectedRound}/`)
+            .then(response => response.json())
+            .then(matches => {
+                matchSelect.innerHTML = '';
+                matches.forEach(match => {
+                   
+                    // get player 1
+                    fetch(`/api/participants/${tournamentId}/${match.player1_id}/`)
+                        .then(response => response.json())
+                        .then(player1 => {
+                            // get player 2
+                            fetch(`/api/participants/${tournamentId}/${match.player2_id}/`)
+                                .then(response => response.json())
+                                .then(player2 => {
+                                    const option = document.createElement('option');
+                                    option.value = match.id;
+                                    option.textContent = `${player1[0].name} vs ${player2[0].name}`;
+                                    matchSelect.appendChild(option);
+                                });
+                        });
+                });
+            })
+            .catch(error => {
+                console.error('Error fetching matches:', error);
+            });
+    });
+});
+</script>
+{% endblock %}

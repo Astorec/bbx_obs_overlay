@@ -1,0 +1,19 @@
+.top-nav{
+    background-color: #8991D7;
+    border-bottom: 1px solid #CACACA;
+    padding: 0.5rem 1rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100px;
+}
+
+.title-nav {
+    color: #E3E3E3;
+    font-size: 50px;
+    font-weight: bold;
+}
+
+#stream-settings{
+    padding-top: 40px;
+}

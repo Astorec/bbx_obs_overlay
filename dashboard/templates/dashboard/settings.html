@@ -1,0 +1,12 @@
+{% extends "dashboard/base.html" %}
+{% block content %}
+<h2>Settings</h2>
+<form method="post">
+    <table>
+        {{ form.as_table }}
+    </table>
+    {% csrf_token %}
+    <button type="submit">
+    save</button>   
+</form>
+{% endblock %}
