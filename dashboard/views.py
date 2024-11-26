@@ -4,7 +4,14 @@ from django.http import HttpResponse, JsonResponse
 from django.contrib import messages
 from .forms import SettingsForm
 from .models import Settings, Tournaments, Matches, Participants
+from obswebsocket import obsws, requests as obsws_requests
 import challonge
+import json
+
+import logging
+
+logger = logging.getLogger('Django')
+obs_client = None
 
 def Dashboard(request):
     settings = Settings.objects.first()
@@ -88,10 +95,67 @@ def get_matches_for_round(request, tournament_id, round_number):
     matches_data = list(matches.values()) 
     return JsonResponse(matches_data, safe=False)
 
+def get_current_round(request, tournament_id):
+    matches = Matches.objects.filter(tournament_id=tournament_id)
+    rounds = 0
+    for match in matches:
+        if match.round > rounds:
+            rounds = match.round
+
+    return JsonResponse(rounds, safe=False)
+
+
 def get_participant_for_match(request, tournament_id, player_id):
         
     participants = Participants.objects.filter(tournament_id=tournament_id, participant_id=player_id)
     participants_data = list(participants.values())
     return JsonResponse(participants_data, safe=False)
-        
    
+def connect_to_obsws(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        address = data.get('address')
+        password = data.get('password')
+
+    logger.debug(f'Connecting to OBS at {address} with password {password}')
+    intalize_obs_client(address, password)
+    obs_client.connect()
+    return JsonResponse({'status': 'connected'})
+
+def send_player_to_obs(request):
+
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        players = data.get('players')
+
+        # Split string in to player 1 and 2 from Player v Player
+        player1, player2 = players.split(' vs ')
+
+        
+        scenelist = obs_client.call(obsws_requests.GetSceneList())
+        current_match_scene = None
+
+        for scene in scenelist.getScenes():
+            if scene['sceneName'] == 'Current Match':
+                current_match_scene = scene
+                break
+        
+        sources = obs_client.call(obsws_requests.GetSceneItemList(sceneName=scene['sceneName'])).getSceneItems()
+
+        for source in sources:
+            if source['sourceName'] == 'Player1':
+               obs_client.call(obsws_requests.SetInputSettings(inputName=source['sourceName'], inputSettings={"text": player1}))
+            elif source['sourceName'] == 'Player2':
+                obs_client.call(obsws_requests.SetInputSettings(inputName=source['sourceName'], inputSettings={"text": player2}))
+        
+        
+        return JsonResponse({'status': 'success'})
+        
+
+
+
+def intalize_obs_client(address, password):
+    global obs_client
+    if obs_client is None:
+        obs_client = obsws(host=address, port=4455, password=password)
+    return obs_client

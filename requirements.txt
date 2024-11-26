@@ -1,0 +1,17 @@
+asgiref==3.8.1
+certifi==2024.8.30
+charset-normalizer==3.4.0
+Django==5.1.3
+idna==3.10
+iso8601==0.1.12
+obs-websocket-py==1.0
+pychallonge==1.11.5
+python-decouple==3.8
+pytz==2019.3
+requests==2.32.3
+sqlparse==0.5.2
+tomli==2.1.0
+typing_extensions==4.12.2
+tzlocal==2.1
+urllib3==2.2.3
+websocket-client==1.8.0

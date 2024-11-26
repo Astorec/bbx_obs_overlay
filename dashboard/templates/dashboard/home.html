@@ -1,8 +1,7 @@
 {% extends "dashboard/base.html" %}
 {% block content %}
 
-<div class="card" id="challonge-url-card"
-    style="width: auto">
+<div class="card" id="challonge-url-card" style="width: auto">
     <div class="card-header">
         <h5 class="card-title">Challonge URL</h5>
     </div>
@@ -11,18 +10,45 @@
             {% csrf_token %}
             <p class="card-text">Enter the Challonge URL to
                 be used for the Overlay currently</p>
-            <input type="text" class="form-control"
-                id="challonge-url"
-                placeholder="Enter Challonge URL">
+            <input type="text" class="form-control" id="challonge-url" placeholder="Enter Challonge URL">
             <div class="d-flex justify-content-center">
 
-                <button type="button"
-                    id="challonge-url-submit"
-                    class="btn btn-primary"
+                <button type="button" id="challonge-url-submit" class="btn btn-primary"
                     style="width: 100%;">Submit</button>
 
             </div>
         </form>
+
+    </div>
+</div>
+
+<div class="card" id="obs-connection-settings">
+    <div class="card-header">
+        <h5 class="card-title">
+            OBS Connection Settings</h5>
+    </div>
+    <div class="card-body">
+        <form>
+            {% csrf_token %}
+            <p class="card-text">Enter the OBS Websocket
+                URL and Password to connect to OBS</p>
+            <input type="hidden" id="csrf-token" value="{{ csrf_token }}">
+            <div>
+                <input type="text" class="form-control" id="obs-websocket-url" placeholder="Enter OBS Websocket URL">
+            </div>
+            <div class="pt-2">
+                <input type="password" class="form-control" id="obs-websocket-password"
+                    placeholder="Enter OBS Websocket Password">
+            </div>
+            <div class="d-flex justify-content-center pt-2">
+
+                <button type="button" id="obs-connection-submit" class="btn btn-primary"
+                    style="width: 100%;">Connect</button>
+                <button id="obs-disconnect-submit" style="display: none;">Disconnect from OBS</button>
+
+            </div>
+        </form>
+
 
     </div>
 </div>
@@ -37,8 +63,7 @@
                 <p class="card-text">If there are Groups,
                     you can select them here. This will
                     filter out the match selection</p>
-                <select class="form-select"
-                    id="challonge-group-select">
+                <select class="form-select" id="challonge-group-select">
                     <option selected>Select Group</option>
                     <option value="1">Group 1</option>
                     <option value="2">Group 2</option>
@@ -46,17 +71,14 @@
                 </select>
                 <div class="d-flex justify-content-center">
 
-                    <button type="button"
-                        id="challonge-url-submit"
-                        class="btn btn-primary"
+                    <button type="button" id="challonge-url-submit" class="btn btn-primary"
                         style="width: 100%;">Select</button>
                 </div>
             </div>
         </div>
     </div>
     <div class="col" id="challonge-round-selection">
-        <div class="card" id="challonge-round-card"
-            style="width: 18rem">
+        <div class="card" id="challonge-round-card" style="width: 18rem">
             <div class="card-header">
                 <h5 class="card-title"> Current Round - XX</h5>
             </div>
@@ -65,8 +87,7 @@
                     automatically
                     but can be overriden here if there is issues
                 </p>
-                <select class="form-select"
-                    id="challonge-round-select">
+                <select class="form-select" id="challonge-round-select">
                     <option selected>Select Round</option>
                     {% for round in rounds %}
                     <option value="{{ round }}">{{ round }}</option>
@@ -74,18 +95,14 @@
                 </select>
                 <div class="d-flex justify-content-center">
 
-                    <button type="button"
-                        id="challonge-url-submit"
-                        class="btn btn-primary"
+                    <button type="button" id="challonge-url-submit" class="btn btn-primary"
                         style="width: 100%;">Override</button>
                 </div>
             </div>
         </div>
     </div>
     <div class="col">
-        <div class="card"
-            id="challonge-select-match-card"
-            style="width: 18rem">
+        <div class="card" id="challonge-select-match-card" style="width: 18rem">
             <div class="card-header">
                 <h5 class="card-title">Select Featured
                     Match</h5>
@@ -95,18 +112,14 @@
                     be
                     featured
                     on the Overlay</p>
-                <select class="form-select"
-                    id="challonge-select-match">
+                <select class="form-select" id="challonge-select-match">
                     <option selected>Select
                         Match</option>
                 </select>
-                <div
-                    class="d-flex justify-content-center">
+                <div class="d-flex justify-content-center">
 
-                    <button type="button"
-                        id="challonge-url-submit"
-                        class="btn btn-primary"
-                        style="width: 100%;">Display on
+                    <button type="button" id="send-players-to-scene" class="btn btn-primary" style="width: 100%;">Display
+                        on
                         Stream</button>
                 </div>
             </div>
@@ -115,41 +128,147 @@
     </div>
 </div>
 
+<!--Event Handler for Swithcing the Drop Down menu of the current matches-->
 <script>
-document.addEventListener("DOMContentLoaded", function() {
-    const roundSelect = document.getElementById("challonge-round-select");
-    const matchSelect = document.getElementById("challonge-select-match");
+    document.addEventListener("DOMContentLoaded", function () {
+        const roundSelect = document.getElementById("challonge-round-select");
+        const matchSelect = document.getElementById("challonge-select-match");
 
-    roundSelect.addEventListener("change", function() {
-        const selectedRound = parseInt(this.value);
-        const tournamentId = "{{ tournament.tournament_id }}";  // Assuming tournament.id is available in the template context
-    
-        fetch(`/api/matches/${tournamentId}/${selectedRound}/`)
-            .then(response => response.json())
-            .then(matches => {
-                matchSelect.innerHTML = '';
-                matches.forEach(match => {
-                   
-                    // get player 1
-                    fetch(`/api/participants/${tournamentId}/${match.player1_id}/`)
-                        .then(response => response.json())
-                        .then(player1 => {
-                            // get player 2
-                            fetch(`/api/participants/${tournamentId}/${match.player2_id}/`)
-                                .then(response => response.json())
-                                .then(player2 => {
-                                    const option = document.createElement('option');
-                                    option.value = match.id;
-                                    option.textContent = `${player1[0].name} vs ${player2[0].name}`;
-                                    matchSelect.appendChild(option);
-                                });
-                        });
+        roundSelect.addEventListener("change", function () {
+            const selectedRound = parseInt(this.value);
+            const tournamentId = "{{ tournament.tournament_id }}";  // Assuming tournament.id is available in the template context
+
+            fetch(`/api/matches/${tournamentId}/${selectedRound}/`)
+                .then(response => response.json())
+                .then(matches => {
+                    matchSelect.innerHTML = '';
+                    matches.forEach(match => {
+
+                        // get player 1
+                        fetch(`/api/participants/${tournamentId}/${match.player1_id}/`)
+                            .then(response => response.json())
+                            .then(player1 => {
+                                // get player 2
+                                fetch(`/api/participants/${tournamentId}/${match.player2_id}/`)
+                                    .then(response => response.json())
+                                    .then(player2 => {
+                                        const option = document.createElement('option');
+                                        option.value = match.id;
+                                        option.textContent = `${player1[0].name} vs ${player2[0].name}`;
+                                        matchSelect.appendChild(option);
+                                    });
+                            });
+                    });
+                })
+                .catch(error => {
+                    console.error('Error fetching matches:', error);
                 });
-            })
-            .catch(error => {
-                console.error('Error fetching matches:', error);
-            });
+        });
     });
-});
+</script>
+
+<!--Event handler for pushing players to obs-->
+<script>
+    document.addEventListener('DOMContentLoaded', function(){
+        const sendPlayersButton = document.getElementById('send-players-to-scene');
+        const matchSelect = document.getElementById("challonge-select-match");
+
+        sendPlayersButton.addEventListener('click', function(){
+            const matchSelect = document.getElementById('challonge-select-match');
+            const selectedOption = matchSelect.selectedOptions[0];
+            const matchText = selectedOption.textContent;
+            const csrfToken = document.getElementById('csrf-token').value;
+
+            fetch('/send_players_to_obs/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken,
+                },
+                body: JSON.stringify({
+                    players: matchText,
+                }),
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        alert('Players sent to OBS');
+                    }
+                    else {
+                        alert('Failed to send players to OBS');
+                    }
+                });
+        });
+
+    });
+</script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const connectButton = document.getElementById('obs-connection-submit');
+
+        if (localStorage.getItem('obsConnected') === null) {
+            localStorage.setItem('obsConnected', 'false');
+        }
+        const isConnected = localStorage.getItem('obsConnected') === 'false';
+
+        if (isConnected) {
+            connectButton.disabled = true;
+            connectButton.textContent = 'Connected to OBS WebSocket';
+            disconnectButton.style.display = 'inline-block';
+        }
+
+        connectButton.addEventListener('click', function () {
+            const addressInput = document.getElementById('obs-websocket-url');
+            const passwordInput = document.getElementById('obs-websocket-password');
+            const csrfToken = document.getElementById('csrf-token').value;
+            let isValid = true;
+
+            addressInput.style.borderColor = '';
+            passwordInput.style.borderColor = '';
+
+
+            if (!addressInput.value) {
+                addressInput.style.borderColor = 'red';
+                isValid = false;
+            }
+
+            if (!passwordInput.value) {
+                passwordInput.style.borderColor = 'red';
+                isValid = false;
+            }
+
+            if (!isValid) {
+                alert('Please fill in all fields');
+                return;
+            }
+            fetch('/connect_to_obsws/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken,
+                },
+                body: JSON.stringify({
+                    address: addressInput.value,
+                    password: passwordInput.value,
+                }),
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'connected') {
+                        alert('Connected to OBS');
+                        const button = document.getElementById('obs-connection-submit');
+                        button.disabled = true;
+                        button.textContent = 'Connected to OBS WebSocket';
+                        localStorage.setItem('obsConnected', 'true');
+                    }
+                    else {
+                        alert('Failed to connect to OBS');
+                    }
+                });
+
+        });
+    });
+
 </script>
 {% endblock %}
